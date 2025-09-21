@@ -4,6 +4,7 @@ import '../providers/settings_provider.dart';
 import '../models/setting.dart';
 import '../shared/widgets/app_scaffold.dart';
 import '../services/kiosk_service.dart';
+import 'database_management_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -168,6 +169,59 @@ class SettingsScreen extends ConsumerWidget {
                         Row(
                           children: [
                             Icon(
+                              Icons.storage_outlined,
+                              color: Colors.red.shade600,
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Database Management',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Manage and delete database records. Use with caution as these actions cannot be undone.',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const DatabaseManagementScreen(),
+                              ),
+                            ),
+                            icon: const Icon(Icons.manage_accounts_outlined),
+                            label: const Text('Manage Database'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.shade600,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.all(16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
                               Icons.info_outline,
                               color: Colors.orange.shade600,
                             ),
@@ -185,7 +239,8 @@ class SettingsScreen extends ConsumerWidget {
                         const Text(
                           '• Disabled screens will not be accessible from the home screen\n'
                           '• Students will see a "Feature disabled" message when trying to access disabled screens\n'
-                          '• Admin functions remain unaffected by these settings',
+                          '• Admin functions remain unaffected by these settings\n'
+                          '• Database management allows deletion of data - use with extreme caution',
                           style: TextStyle(
                             fontSize: 14,
                             height: 1.5,

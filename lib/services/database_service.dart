@@ -1008,13 +1008,187 @@ class DatabaseService {
     final condition = await (_database.select(_database.borrowItemConditions)
       ..where((bic) => bic.id.equals(conditionId)))
       .getSingleOrNull();
-    
+
     if (condition == null) return null;
-    
+
     final borrowItem = await (_database.select(_database.borrowItems)
       ..where((bi) => bi.id.equals(condition.borrowItemId)))
       .getSingleOrNull();
-    
+
     return borrowItem?.itemId;
+  }
+
+  // Bulk deletion methods for database management
+  Future<void> deleteAllStudents() async {
+    await _database.transaction(() async {
+      // First delete all borrow records associated with students
+      await _database.delete(_database.borrowItemConditions).go();
+      await _database.delete(_database.borrowItems).go();
+      await _database.delete(_database.borrowRecords).go();
+      // Then delete all students
+      await _database.delete(_database.students).go();
+    });
+  }
+
+  Future<void> deleteAllBorrowRecords() async {
+    await _database.transaction(() async {
+      await _database.delete(_database.borrowItemConditions).go();
+      await _database.delete(_database.borrowItems).go();
+      await _database.delete(_database.borrowRecords).go();
+
+      // Reset all item quantities to total quantity (return all borrowed items)
+      final items = await _database.select(_database.items).get();
+      for (final item in items) {
+        await (_database.update(_database.items)
+          ..where((i) => i.id.equals(item.id)))
+          .write(ItemsCompanion(
+            availableQuantity: Value(item.totalQuantity),
+          ));
+      }
+    });
+  }
+
+  Future<void> deleteAllItems() async {
+    await _database.transaction(() async {
+      // First delete all related borrow data
+      await _database.delete(_database.borrowItemConditions).go();
+      await _database.delete(_database.borrowItems).go();
+      await _database.delete(_database.borrowRecords).go();
+      // Then delete all items
+      await _database.delete(_database.items).go();
+    });
+  }
+
+  Future<void> deleteAllStorages() async {
+    await _database.transaction(() async {
+      // First delete all related data
+      await _database.delete(_database.borrowItemConditions).go();
+      await _database.delete(_database.borrowItems).go();
+      await _database.delete(_database.borrowRecords).go();
+      await _database.delete(_database.items).go();
+      // Then delete all storages
+      await _database.delete(_database.storages).go();
+    });
+  }
+
+  Future<void> deleteSelectedStudents(List<int> studentIds) async {
+    await _database.transaction(() async {
+      for (final studentId in studentIds) {
+        // Delete borrow records for this student
+        final records = await (_database.select(_database.borrowRecords)
+          ..where((br) => br.studentId.equals(studentId))).get();
+
+        for (final record in records) {
+          // Delete borrow item conditions
+          final borrowItems = await (_database.select(_database.borrowItems)
+            ..where((bi) => bi.borrowRecordId.equals(record.id))).get();
+
+          for (final borrowItem in borrowItems) {
+            await (_database.delete(_database.borrowItemConditions)
+              ..where((bic) => bic.borrowItemId.equals(borrowItem.id))).go();
+          }
+
+          // Delete borrow items
+          await (_database.delete(_database.borrowItems)
+            ..where((bi) => bi.borrowRecordId.equals(record.id))).go();
+        }
+
+        // Delete borrow records
+        await (_database.delete(_database.borrowRecords)
+          ..where((br) => br.studentId.equals(studentId))).go();
+
+        // Delete student
+        await deleteStudent(studentId);
+      }
+    });
+  }
+
+  Future<void> deleteSelectedBorrowRecords(List<int> recordIds) async {
+    await _database.transaction(() async {
+      for (final recordId in recordIds) {
+        // Get borrow items for this record
+        final borrowItems = await (_database.select(_database.borrowItems)
+          ..where((bi) => bi.borrowRecordId.equals(recordId))).get();
+
+        for (final borrowItem in borrowItems) {
+          // Delete quantity conditions
+          await (_database.delete(_database.borrowItemConditions)
+            ..where((bic) => bic.borrowItemId.equals(borrowItem.id))).go();
+        }
+
+        // Delete borrow items
+        await (_database.delete(_database.borrowItems)
+          ..where((bi) => bi.borrowRecordId.equals(recordId))).go();
+
+        // Delete borrow record
+        await (_database.delete(_database.borrowRecords)
+          ..where((br) => br.id.equals(recordId))).go();
+      }
+    });
+  }
+
+  Future<void> deleteSelectedItems(List<int> itemIds) async {
+    await _database.transaction(() async {
+      for (final itemId in itemIds) {
+        // Find all borrow items for this item
+        final borrowItems = await (_database.select(_database.borrowItems)
+          ..where((bi) => bi.itemId.equals(itemId))).get();
+
+        for (final borrowItem in borrowItems) {
+          // Delete quantity conditions
+          await (_database.delete(_database.borrowItemConditions)
+            ..where((bic) => bic.borrowItemId.equals(borrowItem.id))).go();
+        }
+
+        // Delete borrow items
+        await (_database.delete(_database.borrowItems)
+          ..where((bi) => bi.itemId.equals(itemId))).go();
+
+        // Delete item
+        await deleteItem(itemId);
+      }
+    });
+  }
+
+  Future<void> deleteSelectedStorages(List<int> storageIds) async {
+    await _database.transaction(() async {
+      for (final storageId in storageIds) {
+        // Get all items in this storage
+        final items = await (_database.select(_database.items)
+          ..where((i) => i.storageId.equals(storageId))).get();
+
+        // Delete all items in storage (and their related data)
+        await deleteSelectedItems(items.map((i) => i.id).toList());
+
+        // Delete storage
+        await deleteStorage(storageId);
+      }
+    });
+  }
+
+  // Get data counts for UI display
+  Future<Map<String, int>> getDataCounts() async {
+    final studentCount = await (_database.selectOnly(_database.students)
+      ..addColumns([_database.students.id.count()]))
+      .getSingle();
+
+    final storageCount = await (_database.selectOnly(_database.storages)
+      ..addColumns([_database.storages.id.count()]))
+      .getSingle();
+
+    final itemCount = await (_database.selectOnly(_database.items)
+      ..addColumns([_database.items.id.count()]))
+      .getSingle();
+
+    final borrowRecordCount = await (_database.selectOnly(_database.borrowRecords)
+      ..addColumns([_database.borrowRecords.id.count()]))
+      .getSingle();
+
+    return {
+      'students': studentCount.read(_database.students.id.count()) ?? 0,
+      'storages': storageCount.read(_database.storages.id.count()) ?? 0,
+      'items': itemCount.read(_database.items.id.count()) ?? 0,
+      'borrowRecords': borrowRecordCount.read(_database.borrowRecords.id.count()) ?? 0,
+    };
   }
 }

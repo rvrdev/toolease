@@ -203,11 +203,13 @@ The application supports restoring lost and damaged items back to available stoc
 ### Restoration Types
 
 **Lost Items → Replacement**
+
 - Items marked as "lost" can be restored by marking them as "replaced"
 - Updates only `availableQuantity` (not `totalQuantity`)
 - Each selected condition restores exactly 1 unit to available stock
 
-**Damaged Items → Repair**  
+**Damaged Items → Repair**
+
 - Items marked as "damaged" can be restored by marking them as "repaired"
 - Updates only `availableQuantity` (not `totalQuantity`)
 - Each selected condition restores exactly 1 unit to available stock
@@ -215,16 +217,19 @@ The application supports restoring lost and damaged items back to available stoc
 ### Implementation Details
 
 **Database Methods:**
+
 - `restoreLostItemsToStock(List<int> conditionIds)` - Restores lost items
 - `restoreDamagedItemsToStock(List<int> conditionIds)` - Restores damaged items
 
 **UI Features:**
+
 - Individual item selection with checkboxes
 - Batch restoration operations
 - Confirmation dialogs
 - Real-time dashboard updates via provider invalidation
 
 **Key Logic:**
+
 - Each `QuantityCondition` represents exactly 1 unit
 - Restoration changes condition from `lost`/`damaged` to `good`
 - Only `availableQuantity` is increased, `totalQuantity` remains unchanged
