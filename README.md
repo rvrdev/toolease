@@ -24,7 +24,6 @@ ToolEase is a comprehensive inventory management system designed specifically fo
 - **📱 Kiosk-Ready**: Optimized for tablet deployment with restricted navigation
 - **🔐 Secure Authentication**: Device PIN/biometric authentication for admin access
 - **📊 Real-time Tracking**: Live inventory updates and comprehensive reporting
-- **🏷️ Smart ID System**: Auto-generated borrow IDs with year-based prefixing
 
 ## 🚀 Quick Start
 
