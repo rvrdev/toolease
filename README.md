@@ -108,7 +108,7 @@ lib/
 - **Item Restoration**: Restore lost and damaged items back to available stock
   - Mark lost items as replaced
   - Mark damaged items as repaired
-- **Advanced Reporting**: Generate PDF, Excel, and CSV reports
+- **Advanced Reporting**: Generate PDF reports
 - **System Settings**: Configure app behavior and features
 - **User Manual**: Comprehensive admin documentation
 
